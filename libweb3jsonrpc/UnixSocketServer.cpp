@@ -30,6 +30,7 @@ along with cpp-ethereum.  If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 #include <libdevcore/Guards.h>
 #include <libdevcore/FileSystem.h>
+#include <libdevcore/easylog.h>
 
 // "Mac OS X does not support the flag MSG_NOSIGNAL but we have an equivalent."
 // See http://lists.apple.com/archives/macnetworkprog/2002/Dec/msg00091.html
@@ -63,6 +64,14 @@ string ipcSocketPath()
 UnixDomainSocketServer::UnixDomainSocketServer(string const& _appId):
 	IpcServerBase(string(getIpcPath() + "/" + _appId + ".ipc").substr(0, c_pathMaxSize))
 {
+	auto path = string(getIpcPath() + "/" + _appId + ".ipc");
+	if (path.size() > c_pathMaxSize)
+	{
+		LOG(WARNING) << "[UnixDomainSocketServer] ipc path too long and should be truncated, max_length = " << c_pathMaxSize
+			<< " ,current_length = " << path.size()
+			<< " ,path = " << path
+			;
+	}
 }
 
 UnixDomainSocketServer::~UnixDomainSocketServer()
@@ -78,7 +87,12 @@ bool UnixDomainSocketServer::StartListening()
 			unlink(m_path.c_str());
 
 		if (access(m_path.c_str(), F_OK) != -1)
+		{
+			LOG(WARNING) << "unix domain socket start failed , path = " << m_path
+				<< " ,errno = " << errno
+				;
 			return false;
+		}
 
 		m_socket = socket(PF_UNIX, SOCK_STREAM, 0);
 		memset(&(m_address), 0, sizeof(sockaddr_un));
