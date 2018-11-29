@@ -4,6 +4,7 @@ var fs=require('fs');
 var execSync =require('child_process').execSync;
 var web3sync = require('../web3lib/web3sync');
 var BigNumber = require('bignumber.js');
+var sha3 = require("../web3lib/sha3")
 
 /*
 *   npm install --save-dev babel-cli babel-preset-es2017
@@ -28,6 +29,26 @@ function getAbi0(file){
 	return abi;
 }
 
+async function sendTx(group, address, funcParam) {
+  return new Promise((resolve, reject) => {
+    var funcDesc = "{\"contract\":\""+address+"\", \"function\":\""+funcParam+"\"}";
+    var func = "setPermission(address,string,string,bool)";
+    var params = [address,sha3(funcParam).slice(0, 8),funcDesc,true];
+    //console.log(params);
+    var receipt = web3sync.sendRawTransaction(config.account, config.privKey, group.address, func, params);
+    resolve(receipt);
+  });
+}
+
+async function addPermission(group, address, funcParam, desc) {
+  await sendTx(group, address, funcParam);
+  return new Promise((resolve, reject) => {
+    var ret = group.getPermission(address,sha3(funcParam).slice(0, 8));
+    console.log(desc+funcParam+" authorized："+(ret?"Success":"Fail"));
+    resolve(ret);
+  });
+}
+
 (async function() {
     //var account=web3.eth.accounts[0];
 
@@ -39,21 +60,28 @@ function getAbi0(file){
 
     // 权限控制
     //execSync("fisco-solc --abi --bin --overwrite -o "+config.Ouputpath+" AuthorityFilter.sol");
-    var AuthorityFilterReicpt= await web3sync.rawDeploy(config.account, config.privKey, "AuthorityFilter");
-    var AuthorityFilter=web3.eth.contract(getAbi("AuthorityFilter")).at(AuthorityFilterReicpt.contractAddress);
+    //var AuthorityFilterReicpt= await web3sync.rawDeploy(config.account, config.privKey, "AuthorityFilter");
+    //var AuthorityFilter=web3.eth.contract(getAbi("AuthorityFilter")).at(AuthorityFilterReicpt.contractAddress);
     //execSync("fisco-solc --abi --bin --overwrite -o "+config.Ouputpath+" Group.sol");
-    var GroupReicpt= await web3sync.rawDeploy(config.account, config.privKey, "Group");
-    var Group=web3.eth.contract(getAbi("Group")).at(GroupReicpt.contractAddress);
+    //var GroupReicpt= await web3sync.rawDeploy(config.account, config.privKey, "Group");
+    //var Group=web3.eth.contract(getAbi("Group")).at(GroupReicpt.contractAddress);
     //execSync("fisco-solc --abi --bin --overwrite -o "+config.Ouputpath+" TransactionFilterChain.sol");
-    var TransactionFilterChainReicpt= await web3sync.rawDeploy(config.account, config.privKey, "TransactionFilterChain");
+
+    var GroupFactoryReceipt = await web3sync.rawDeploy(config.account, config.privKey, "GroupFactory");
+    var GroupFactory=web3.eth.contract(getAbi("GroupFactory")).at(GroupFactoryReceipt.contractAddress);
+
+    var TransactionFilterChainReicpt= await web3sync.rawDeploy(config.account, config.privKey, "TransactionFilterChain", ["address"], [GroupFactory.getBaseGroup()]);
     var TransactionFilterChain=web3.eth.contract(getAbi("TransactionFilterChain")).at(TransactionFilterChainReicpt.contractAddress);
-    
+
     var CAActionReicpt= await web3sync.rawDeploy(config.account, config.privKey,  "CAAction");
     var CAAction=web3.eth.contract(getAbi("CAAction")).at(CAActionReicpt.contractAddress);
-    
+
     var NodeActionReicpt= await web3sync.rawDeploy(config.account, config.privKey,  "NodeAction");
     var NodeAction=web3.eth.contract(getAbi("NodeAction")).at(NodeActionReicpt.contractAddress);
-    
+
+    var IdentityMgrReceipt = await web3sync.rawDeploy(config.account, config.privKey, "IdentityMgr");
+    var IdentityMgr=web3.eth.contract(getAbi("IdentityMgr")).at(IdentityMgrReceipt.contractAddress);
+
     func = "setSystemAddr(address)";
 	params = [SystemProxy.address];
 	receipt = await web3sync.sendRawTransaction(config.account, config.privKey, NodeActionReicpt.contractAddress, func, params);
@@ -75,14 +103,33 @@ function getAbi0(file){
     var ContractAbiMgrReicpt= await web3sync.rawDeploy(config.account, config.privKey,  "ContractAbiMgr");
     var ContractAbiMgr=web3.eth.contract(getAbi("ContractAbiMgr")).at(ContractAbiMgrReicpt.contractAddress);
 
+    // add identitymgr setAccountInfo to Base Group
+    console.log("add identity permission to base group");
+    var permissionFunc = "setIdentityInfo(string,string)";
+    var BaseGroup =web3.eth.contract(getAbi("Group")).at(GroupFactory.getBaseGroup());
+    await addPermission(BaseGroup, IdentityMgrReceipt.contractAddress, permissionFunc, "set permission");
+
     console.log("register system contract to CNS");
 
     var func = "addAbi(string,string,string,string,address)";
+
+    //GroupFactory
+    var abi = getAbi0("GroupFactory");
+    var params  = ["GroupFactory","GroupFactory","",abi,GroupFactoryReceipt.contractAddress];
+    console.log("group factory,params =>" + params.toString());
+    var receipt = await web3sync.sendRawTransaction(config.account, config.privKey, ContractAbiMgrReicpt.contractAddress, func, params);
+
+    //IdentityMgr
+    var abi = getAbi0("IdentityMgr");
+    var params  = ["IdentityMgr","IdentityMgr","",abi,IdentityMgrReceipt.contractAddress];
+    console.log("identity mgr,params =>" + params.toString());
+    var receipt = await web3sync.sendRawTransaction(config.account, config.privKey, ContractAbiMgrReicpt.contractAddress, func, params);
+
     //ContractAbiMgr
     var abi = getAbi0("ContractAbiMgr");
     var params  = ["ContractAbiMgr","ContractAbiMgr","",abi,ContractAbiMgrReicpt.contractAddress];
     console.log("contract abi manager ,params =>" + params.toString());
-    var receipt = await web3sync.sendRawTransaction(config.account, config.privKey, ContractAbiMgrReicpt.contractAddress, func, params);    
+    var receipt = await web3sync.sendRawTransaction(config.account, config.privKey, ContractAbiMgrReicpt.contractAddress, func, params);
 
     //SystemProxy
     abi = getAbi0("SystemProxy");
@@ -95,14 +142,14 @@ function getAbi0(file){
     receipt = await web3sync.sendRawTransaction(config.account, config.privKey, ContractAbiMgrReicpt.contractAddress, func, params);
 
     //AuthorityFilter
-    abi = getAbi0("AuthorityFilter");
+    /*abi = getAbi0("AuthorityFilter");
     params  = ["AuthorityFilter","AuthorityFilter","",abi,AuthorityFilterReicpt.contractAddress];
     receipt = await web3sync.sendRawTransaction(config.account, config.privKey, ContractAbiMgrReicpt.contractAddress, func, params);
 
     //Group
     abi = getAbi0("Group");
     params  = ["Group","Group","",abi,GroupReicpt.contractAddress];
-    receipt = await web3sync.sendRawTransaction(config.account, config.privKey, ContractAbiMgrReicpt.contractAddress, func, params);
+    receipt = await web3sync.sendRawTransaction(config.account, config.privKey, ContractAbiMgrReicpt.contractAddress, func, params);*/
 
     //CAAction
     abi = getAbi0("CAAction");
@@ -175,6 +222,5 @@ function getAbi0(file){
         var route=SystemProxy.getRoute(key);
         console.log(i+" )"+ key+"=>"+route[0].toString()+","+route[1].toString()+","+route[2].toString());
     }
-    
 
 })();

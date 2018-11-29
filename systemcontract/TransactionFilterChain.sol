@@ -4,6 +4,11 @@ import "AuthorityFilter.sol";
 
 contract TransactionFilterChain {
     address[] private filters;                  //filters list
+    address private _baseGroup;
+
+    function TransactionFilterChain(address baseGroup) {
+        _baseGroup = baseGroup;
+    }
     
 	function process(address origin, address from, address to, string func, string input) public constant returns(bool) {
 		for(uint256 i=0; i<filters.length; ++i) {
@@ -28,7 +33,7 @@ contract TransactionFilterChain {
     }
 	
     function addFilterAndInfo(string name, string version ,string desc) public returns(uint256) {
-		address filter = new AuthorityFilter();
+		address filter = new AuthorityFilter(_baseGroup);
 		AuthorityFilter(filter).setName(name);
 		AuthorityFilter(filter).setVersion(version);
 		AuthorityFilter(filter).setDesc(desc);

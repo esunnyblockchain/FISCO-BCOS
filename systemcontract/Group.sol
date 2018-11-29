@@ -7,7 +7,7 @@ contract Group {
     string private _desc;                               // the description of group
     bytes32[] private _keys;                            // list, content is sha256(contract address, function name)
     mapping (bytes32 => string) private _keyMaptoFunc;  // sha256(contract address, function name) map to function name
-	
+
     function Group() public {
     }
 
@@ -18,14 +18,14 @@ contract Group {
         }
         return _permissions[key];
     }
-    
+
     function setDesc(string desc) public {
         _desc = desc;
     }
     function getDesc() public constant returns(string) {
         return _desc;
     }
-	
+
     function setPermission(address to, string func, string funcDesc, bool permission) public {
         bytes32 key = sha256(to, func);
         if (permission) {
@@ -38,32 +38,32 @@ contract Group {
             }
             if (bFlag == false) {
                 _keys.push(key);
-                _keyMaptoFunc[key] = funcDesc;	
+                _keyMaptoFunc[key] = funcDesc;
             }
         }
         _permissions[key] = permission;
     }
-    
+
     function getCreate() constant public returns(bool) {
         return _create;
     }
-    
+
     function setCreate(bool create) public {
         _create = create;
     }
-    
+
     function getBlack() constant public returns(bool) {
         return _black;
     }
-    
+
     function setBlack(bool black) public {
         _black = black;
     }
-	
+
     function getKeys() constant public returns(bytes32[]) {
         return _keys;
     }
-	
+
     function getFuncDescwithPermissionByKey(bytes32 key) constant public returns(string) {
         if (_permissions[key]) {
             return _keyMaptoFunc[key];

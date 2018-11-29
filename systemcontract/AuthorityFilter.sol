@@ -5,13 +5,16 @@ import "Group.sol";
 contract AuthorityFilter is TransactionFilterBase {
     bool private _enabled = false;                           // Whether a filter can check the permissions
     mapping (address => address) private _groups;            // Account map to group
-	
-    function AuthorityFilter() public {
+    address private _baseGroup;
+
+    function AuthorityFilter(address baseGroup) public {
+        _baseGroup = baseGroup;
     }
+
     function getInfo() public constant returns(string,string,string) {
         return (_name,_version,_desc);
     }
-	
+
     // set user to a new group, with a group being built
     function setUserToNewGroup(address user) public {
         _groups[user] = new Group();
@@ -21,7 +24,11 @@ contract AuthorityFilter is TransactionFilterBase {
         _groups[user] = group;
     }
     function getUserGroup(address user) public constant returns(address) {
-        return _groups[user];
+        address userGroup = _groups[user];
+        if (userGroup == 0x0000000000000000000000000000000000000000)
+            return _baseGroup;
+        else
+            return userGroup;
     }
 
     function setEnable(bool enable) public {
@@ -36,10 +43,7 @@ contract AuthorityFilter is TransactionFilterBase {
         if (!_enabled) {
             return true;
         }
-        address group = Group(_groups[origin]);
-        if (0x0000000000000000000000000000000000000000 == group) {
-            return false;
-        }
+        address group = getUserGroup(origin);
         return Group(group).getPermission(to, func);
     }
     // Check whether the user has the permissions to deploy a contract
@@ -47,13 +51,10 @@ contract AuthorityFilter is TransactionFilterBase {
         if (!_enabled) {
             return true;
         }
-        address group = Group(_groups[origin]);
-        if (0x0000000000000000000000000000000000000000 == group) {
-            return false;
-        }
+        address group = getUserGroup(origin);
         return Group(group).getCreate();
-    }	
-	
+    }
+
     function newGroup(string desc) public returns(address) {
         address group = new Group();
 		Group(group).setDesc(desc);
