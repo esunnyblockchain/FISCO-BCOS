@@ -65,10 +65,11 @@ contract SaleAuction {
     Auction storage auction = tokenIdToAuction[_tokenId];
     require(_price >= auction.price);
 
-    ERC20(moneyAddress).transferFrom(msg.sender, auction.seller, _price);
-    _transfer(msg.sender, _tokenId);
-
-    AuctionSuccess(_tokenId, _price);
+    bool transferSuccess = ERC20(moneyAddress).transferFrom(msg.sender, auction.seller, _price);
+    if (transferSuccess) {
+        _transfer(msg.sender, _tokenId);
+        AuctionSuccess(_tokenId, _price);
+    }
   }
 
   function _remove(uint256 _tokenId) internal {

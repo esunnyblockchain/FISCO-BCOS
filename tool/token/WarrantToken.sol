@@ -21,12 +21,12 @@ contract WarrantToken is TokenERC721Enumerable {
 
     }
 
-    function addReceipt(string _name, uint256 _qty) public {
+    function addWarrant(string _name, uint256 _qty) public {
         issueTokens(1);
         warrants.push(Warrant(_name, _qty));
     }
 
-    function getReceipt(uint256 _tokenId) public constant returns(string,uint256) {
+    function getWarrant(uint256 _tokenId) public constant returns(string,uint256) {
         if (_tokenId == 0 || _tokenId > warrants.length)
             throw;
         return (warrants[_tokenId-1].name, warrants[_tokenId-1].qty);

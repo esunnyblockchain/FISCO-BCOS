@@ -82,14 +82,16 @@ contract TokenERC721 is ERC721, CheckERC165{
     /// and is not needed if the initial supply of NFTs is all that is needed.
     /// @dev Throws if msg.sender isn't creator, or if added tokens overflows maxId (uint256)
     /// @param _extraTokens The number of extra tokens to mint.
-    function issueTokens(uint256 _extraTokens) public{
+    function issueTokens(uint256 _extraTokens) internal {
         //require(msg.sender == creator);
         balances[msg.sender] = balances[msg.sender].add(_extraTokens);
 
         //We have to an event for each token that gets created
         for(uint i = maxId.add(1); i <= maxId.add(_extraTokens); i++){
+            owners[i] = msg.sender;
             Transfer(0x0, msg.sender, i);
         }
+
 
         maxId += _extraTokens; //<- SafeMath for this operation was done in for loop above
     }
