@@ -115,12 +115,18 @@ contract TokenERC721 is ERC721, CheckERC165{
     ///  operator of the current owner.
     /// @param _approved The new approved NFT controller
     /// @param _tokenId The NFT to approve
-    function approve(address _approved, uint256 _tokenId)  external{
+    function approve(address _approved, uint256 _tokenId)  external {
         address owner = ownerOf(_tokenId);
         require( owner == msg.sender                    //Require Sender Owns Token
             || authorised[owner][msg.sender]                //  or is approved for all.
         );
+
+        _approve(_approved, _tokenId);
+
         Approval(owner, _approved, _tokenId);
+    }
+
+    function _approve(address _approved, uint256 _tokenId) internal {
         allowance[_tokenId] = _approved;
     }
 

@@ -1,6 +1,6 @@
 pragma solidity ^0.4.10;
 
-import "./standard/ERC20.sol"
+import "./standard/ERC20.sol";
 
 contract MoneyToken is ERC20 {
     string public constant symbol = "Micraft";
