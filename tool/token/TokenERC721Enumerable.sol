@@ -116,11 +116,11 @@ contract TokenERC721Enumerable is TokenERC721, ERC721Enumerable {
     /// all newly minted tokens will belong to creator.
     /// @dev See TokenERC721 - is largely identical except for some array manipulation.
     /// @param _extraTokens The number of extra tokens to mint.
-    function supply(uint256 _extraTokens) public {
+    function supply(uint256 _extraTokens) internal {
         supply(_extraTokens, msg.sender);
     } 
 
-    function supply(uint256 _extraTokens, address _to) public {
+    function supply(uint256 _extraTokens, address _to) internal {
         //Original
         //require(msg.sender == creator);
         balances[_to] = balances[_to].add(_extraTokens);
@@ -147,7 +147,7 @@ contract TokenERC721Enumerable is TokenERC721, ERC721Enumerable {
         maxId = maxId.add(_extraTokens);
     }
 
-    function burn(uint256 _tokenId) external {
+    function burn(uint256 _tokenId) internal {
         address owner = ownerOf(_tokenId);
         require ( owner == msg.sender             //Require sender owns token
             //Doing the two below manually instead of referring to the external methods saves gas

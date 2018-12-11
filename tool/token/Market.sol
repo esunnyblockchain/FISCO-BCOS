@@ -41,7 +41,7 @@ contract Market {
     auction.price = _price;
 
     auctionTokens.push(_tokenId);
-    auctionTokenIndex[_tokenId] = auctionTokens.length;
+    auctionTokenIndex[_tokenId] = auctionTokens.length - 1;
 
     AuctionStart(_tokenId, _price);
   }
@@ -72,6 +72,9 @@ contract Market {
     bool transferSuccess = ERC20(moneyAddress).transferFrom(_buyer, auction.seller, _price);
     if (transferSuccess) {
         _transfer(_buyer, _tokenId);
+
+        _remove(_tokenId);
+
         AuctionSuccess(_tokenId, _price);
     }
   }
@@ -84,7 +87,7 @@ contract Market {
 
     // change last token to current position and decrease length and update index
     uint256 tokenIndex = auctionTokenIndex[_tokenId];
-    require(auctionTokens[tokenIndex] == _tokenId);
+    require(auctionTokens[tokenIndex] == _tokenId); // dont know why
     if (tokenIndex < auctionTokens.length - 1) { // if this is the last, no need change
         auctionTokens[tokenIndex] = auctionTokens[auctionTokens.length-1]; 
         auctionTokenIndex[auctionTokens[tokenIndex]] = tokenIndex;

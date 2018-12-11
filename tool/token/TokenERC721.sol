@@ -82,11 +82,11 @@ contract TokenERC721 is ERC721, CheckERC165{
     /// and is not needed if the initial supply of NFTs is all that is needed.
     /// @dev Throws if msg.sender isn't creator, or if added tokens overflows maxId (uint256)
     /// @param _extraTokens The number of extra tokens to mint.
-    function supply(uint256 _extraTokens) public {
+    function supply(uint256 _extraTokens) internal {
         supply(_extraTokens, msg.sender);
     }
 
-    function supply(uint256 _extraTokens, address _to) public {
+    function supply(uint256 _extraTokens, address _to) internal {
         //require(msg.sender == creator);
         balances[_to] = balances[_to].add(_extraTokens);
 
@@ -100,7 +100,7 @@ contract TokenERC721 is ERC721, CheckERC165{
         maxId += _extraTokens; //<- SafeMath for this operation was done in for loop above
     }
 
-    function burn(uint256 _tokenId) external{
+    function burn(uint256 _tokenId) internal {
         address owner = ownerOf(_tokenId);
         require ( owner == msg.sender             //Require sender owns token
             //Doing the two below manually instead of referring to the external methods saves gas
