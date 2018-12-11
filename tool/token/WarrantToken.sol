@@ -1,7 +1,7 @@
 pragma solidity ^0.4.10;
 
 import "./TokenERC721Enumerable.sol";
-import "./SaleAuction.sol";
+import "./Market.sol";
 
 /// @title A scalable implementation of all ERC721 NFT standards combined.
 /// @author Andrew Parker
@@ -15,14 +15,18 @@ contract WarrantToken is TokenERC721Enumerable {
 
     Warrant[] warrants;
 
-    address saleAuction;
+    address public market;
 
     function WarrantToken() public TokenERC721Enumerable(0) {
 
     }
 
     function addWarrant(string _name, uint256 _qty) public {
-        issueTokens(1);
+        addWarrant(_name, _qty, msg.sender);
+    }
+
+    function addWarrant(string _name, uint256 _qty, address _to) public {
+        supply(1, _to);
         warrants.push(Warrant(_name, _qty));
     }
 
@@ -32,16 +36,16 @@ contract WarrantToken is TokenERC721Enumerable {
         return (warrants[_tokenId-1].name, warrants[_tokenId-1].qty);
     }
 
-    function setSaleAuction(address _saleAuction) {
-        saleAuction = _saleAuction;
+    function setMarket(address _market) {
+        market = _market;
     }
 
     function saleWarrent(uint256 _tokenId, uint256 _price) {
-        require(saleAuction != address(0));
+        require(market != address(0));
         require(ownerOf(_tokenId) == msg.sender); 
 
-        _approve(saleAuction, _tokenId);
+        _approve(market, _tokenId);
 
-        SaleAuction(saleAuction).createAuction(_tokenId, _price, msg.sender);
+        Market(market).createAuction(_tokenId, _price, msg.sender);
     }
 }

@@ -57,7 +57,16 @@ async function addPermission(group, address, funcParam, desc) {
     var WarrantTokenReceipt= await web3sync.rawDeploy(config.account, config.privKey,  "WarrantToken");
     console.log("Warrant Token deploy success, address: " + WarrantTokenReceipt.contractAddress);
 
-    var SaleAuctionReceipt= await web3sync.rawDeploy(config.account, config.privKey,  "SaleAuction", ["address", "address"], [WarrantTokenReceipt.contractAddress, MoneyTokenReceipt.contractAddress]);
+    var SaleAuctionReceipt= await web3sync.rawDeploy(config.account, config.privKey,  "Market", ["address", "address"], [WarrantTokenReceipt.contractAddress, MoneyTokenReceipt.contractAddress]);
     console.log("Sale Auction deploy success, address: " + SaleAuctionReceipt.contractAddress);
+
+    var func = "setMarket(address)";
+    var params = [SaleAuctionReceipt.contractAddress];
+
+    var receipt = await web3sync.sendRawTransaction(config.account, config.privKey, WarrantTokenReceipt.contractAddress, func, params);
+    console.log(receipt);
+
+    var receipt = await web3sync.sendRawTransaction(config.account, config.privKey, MoneyTokenReceipt.contractAddress, func, params);
+    console.log(receipt);
 
 })();

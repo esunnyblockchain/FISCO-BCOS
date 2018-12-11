@@ -1,16 +1,16 @@
 pragma solidity ^0.4.10;
 
 import "./standard/ERC20.sol";
-import "./SaleAuction.sol";
+import "./Market.sol";
 
 contract MoneyToken is ERC20 {
-    string public constant symbol = "Micraft";
-    string public constant name = "Micraft Token";
+    string public constant symbol = "Money";
+    string public constant name = "RMB";
     uint256 _totalSupply = 0;
     mapping(address => uint256) balances;
     mapping(address => mapping(address => uint256)) allowed;
     address public owner;
-    address public saleAuction;
+    address public market;
 
     modifier onlyOwner {
         if (msg.sender != owner) {
@@ -19,8 +19,8 @@ contract MoneyToken is ERC20 {
         _;
     }
 
-    function setSaleAuction(address _saleAuction) {
-        saleAuction = _saleAuction;
+    function setMarket(address _market) external {
+        market = _market;
     }
 
     function MoneyToken() {
@@ -28,10 +28,14 @@ contract MoneyToken is ERC20 {
         balances[msg.sender] = _totalSupply;
     }
 
-    function supply(uint256 amount) {
-        _totalSupply += amount;
-        balances[msg.sender] += amount;
-        Transfer(0x0, msg.sender, amount);
+    function supply(uint256 _amount) public {
+        supply(_amount, msg.sender);
+    }
+
+    function supply(uint256 _amount, address _to) public {
+        _totalSupply += _amount;
+        balances[_to] += _amount;
+        Transfer(0x0, _to, _amount);
     }
 
     function totalSupply() constant public returns (uint256 totalSupply) {
@@ -66,9 +70,9 @@ contract MoneyToken is ERC20 {
     }
 
     function bid(uint256 _tokenId, uint256 _price) {
-        require(saleAuction != address(0));
-        approve(saleAuction, _price);
-        SaleAuction(saleAuction).bid(_tokenId, _price);
+        require(market != address(0));
+        approve(market, _price);
+        Market(market).bid(_tokenId, _price, msg.sender);
     }
 
     function approve(address spender, uint256 amount) public returns (bool success) {

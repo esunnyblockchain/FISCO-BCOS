@@ -4,7 +4,7 @@ pragma solidity ^0.4.11;
 import "./standard/ERC721.sol";
 import "./standard/ERC20.sol";
 
-contract SaleAuction {
+contract Market {
 
   struct Auction {
     address seller;
@@ -22,14 +22,14 @@ contract SaleAuction {
   event AuctionCancel(uint256 tokenId);
   event AuctionSuccess(uint256 tokenId, uint256 price);
 
-  function SaleAuction(address _tokenAddress, address _moneyAddress) public {
+  function Market(address _tokenAddress, address _moneyAddress) public {
     require(_tokenAddress != address(0));
     require(_moneyAddress != address(0));
     tokenAddress = _tokenAddress;
     moneyAddress = _moneyAddress;
   }
 
-  function createAuction(uint256 _tokenId, uint256 _price, address _seller) external { 
+  function createAuction(uint256 _tokenId, uint256 _price, address _seller) external {
     //require (msg.sender == tokenAddress); // check operation from token address, someone want to sell token
     require (_seller == ERC721(tokenAddress).ownerOf(_tokenId)); // check owner of token is seller
 
@@ -46,42 +46,53 @@ contract SaleAuction {
     AuctionStart(_tokenId, _price);
   }
 
-  function cancelAuction(uint256 _tokenId) {
+  function getAuctionTokens() external constant returns(uint256[]) {
+      return auctionTokens;
+  }
+
+  function cancelAuction(uint256 _tokenId) external {
     //require (msg.sender == tokenAddress); // check operation from token address, someone want to sell token
 
     require (address(this) == ERC721(tokenAddress).ownerOf(_tokenId)); // check auction contract is approved
     require (tokenIdToAuction[_tokenId].seller == msg.sender);
 
     _transfer(tokenIdToAuction[_tokenId].seller, _tokenId);
-    
+
     _remove(_tokenId);
 
     AuctionCancel(_tokenId);
   }
 
-  function bid(uint256 _tokenId, uint256 _price) external {
+  function bid(uint256 _tokenId, uint256 _price, address _buyer) external {
     require(_price > 0);
 
     Auction storage auction = tokenIdToAuction[_tokenId];
     require(_price >= auction.price);
 
-    bool transferSuccess = ERC20(moneyAddress).transferFrom(msg.sender, auction.seller, _price);
+    bool transferSuccess = ERC20(moneyAddress).transferFrom(_buyer, auction.seller, _price);
     if (transferSuccess) {
-        _transfer(msg.sender, _tokenId);
+        _transfer(_buyer, _tokenId);
         AuctionSuccess(_tokenId, _price);
     }
   }
 
+  function getAuction(uint256 _tokenId) public constant returns(address, uint256){
+      return (tokenIdToAuction[_tokenId].seller, tokenIdToAuction[_tokenId].price);
+  }
+
   function _remove(uint256 _tokenId) internal {
+
+    // change last token to current position and decrease length and update index
     uint256 tokenIndex = auctionTokenIndex[_tokenId];
-    if (tokenIndex > 0) {
-      for (uint256 i = tokenIndex - 1; i < auctionTokens.length - 1; ++i) {
-        auctionTokens[i] = auctionTokens[i+1];
-      }
-      --auctionTokens.length;
+    require(auctionTokens[tokenIndex] == _tokenId);
+    if (tokenIndex < auctionTokens.length - 1) { // if this is the last, no need change
+        auctionTokens[tokenIndex] = auctionTokens[auctionTokens.length-1]; 
+        auctionTokenIndex[auctionTokens[tokenIndex]] = tokenIndex;
     }
-    delete tokenIdToAuction[_tokenId];
+    --auctionTokens.length;
     delete auctionTokenIndex[_tokenId];
+
+    delete tokenIdToAuction[_tokenId];
   }
 
   function _escrow(address _owner, uint256 _tokenId) internal {

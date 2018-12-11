@@ -116,34 +116,38 @@ contract TokenERC721Enumerable is TokenERC721, ERC721Enumerable {
     /// all newly minted tokens will belong to creator.
     /// @dev See TokenERC721 - is largely identical except for some array manipulation.
     /// @param _extraTokens The number of extra tokens to mint.
-    function issueTokens(uint256 _extraTokens) internal {
+    function supply(uint256 _extraTokens) public {
+        supply(_extraTokens, msg.sender);
+    } 
+
+    function supply(uint256 _extraTokens, address _to) public {
         //Original
         //require(msg.sender == creator);
-        balances[msg.sender] = balances[msg.sender].add(_extraTokens);
+        balances[_to] = balances[_to].add(_extraTokens);
 
         //Enumerable Additions
         uint thisId;
         for(uint i = 0; i < _extraTokens; i++){
             thisId = maxId.add(i).add(1);// + i + 1;
 
-            owners[thisId] = msg.sender;
+            owners[thisId] = _to;
 
-            tokenTokenIndexes[thisId] = ownerTokenIndexes[msg.sender].length;
-            ownerTokenIndexes[msg.sender].push(thisId);
+            tokenTokenIndexes[thisId] = ownerTokenIndexes[_to].length;
+            ownerTokenIndexes[_to].push(thisId);
 
             indexTokens[thisId] = tokenIndexes.length;
             tokenIndexes.push(thisId);
 
 
             //Move event into this loop to save gas
-            Transfer(0x0, msg.sender, thisId);
+            Transfer(0x0, _to, thisId);
         }
 
         //Original
         maxId = maxId.add(_extraTokens);
     }
 
-    function burnToken(uint256 _tokenId) external{
+    function burn(uint256 _tokenId) external {
         address owner = ownerOf(_tokenId);
         require ( owner == msg.sender             //Require sender owns token
             //Doing the two below manually instead of referring to the external methods saves gas
