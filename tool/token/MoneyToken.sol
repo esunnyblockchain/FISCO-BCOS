@@ -85,4 +85,3 @@ contract MoneyToken is ERC20 {
         return allowed[_owner][_spender];
     }
 }
-

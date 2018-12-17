@@ -14,13 +14,16 @@ contract WarrantToken is TokenERC721Enumerable {
     }
 
     Warrant[] warrants;
+    address[] accounts;
 
     address public market;
 
     function WarrantToken() public TokenERC721Enumerable(0) {
 
     }
-
+    function getWarrantNum()public constant returns(uint256){
+        return warrants.length;
+    }
     function addWarrant(string _name, uint256 _qty) public {
         addWarrant(_name, _qty, msg.sender);
     }
@@ -28,12 +31,13 @@ contract WarrantToken is TokenERC721Enumerable {
     function addWarrant(string _name, uint256 _qty, address _to) public {
         supply(1, _to);
         warrants.push(Warrant(_name, _qty));
+        accounts.push(_to);
     }
 
-    function getWarrant(uint256 _tokenId) public constant returns(string,uint256) {
+    function getWarrant(uint256 _tokenId) public constant returns(string,uint256,address) {
         if (_tokenId == 0 || _tokenId > warrants.length)
             throw;
-        return (warrants[_tokenId-1].name, warrants[_tokenId-1].qty);
+        return (warrants[_tokenId-1].name, warrants[_tokenId-1].qty, accounts[_tokenId-1]);
     }
 
     function setMarket(address _market) {

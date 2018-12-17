@@ -11,11 +11,18 @@ contract IdentityMgr {
 
     mapping(address=>IdentityInfo) private _identity_info;
     mapping(address=>bool) private _identity_valid;
+    mapping(address=>bool) private _registered;
     address[] _reg_accounts;
     address[] _valid_accounts;
 
     event Identity(address indexed account, string name, string id, uint256 blocknumber);
     event IdentityReg(address account, string name, string id, uint256 blocknumber);
+    function isRegistered(address account)public constant returns(bool){
+        return _registered[account];
+    }
+    function isValid(address account)public constant returns(bool){
+        return _identity_valid[account];
+    }
 
     function setIdentityInfo(string name, string id) public {
         _identity_info[msg.sender] = IdentityInfo(name, id, block.number, block.timestamp);
@@ -24,7 +31,7 @@ contract IdentityMgr {
         }
         _identity_valid[msg.sender] = false;
         insertAccount(_reg_accounts, msg.sender);
-
+        _registered[msg.sender] = true;
         IdentityReg(msg.sender, name, id, block.number);
     }
 
