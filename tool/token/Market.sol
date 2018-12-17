@@ -18,9 +18,9 @@ contract Market {
   uint256[] auctionTokens;
   mapping (uint256 => uint256) private auctionTokenIndex;
 
-  event AuctionStart(uint256 tokenId, uint256 price);
-  event AuctionCancel(uint256 tokenId);
-  event AuctionSuccess(uint256 tokenId, uint256 price);
+  event AuctionStart(uint256 indexed tokenId, address indexed seller, uint256 price);
+  event AuctionCancel(uint256 indexed tokenId);
+  event AuctionSuccess(uint256 indexed tokenId, address indexed from, address indexed to, uint256 price);
 
   function Market(address _tokenAddress, address _moneyAddress) public {
     require(_tokenAddress != address(0));
@@ -43,7 +43,7 @@ contract Market {
     auctionTokens.push(_tokenId);
     auctionTokenIndex[_tokenId] = auctionTokens.length - 1;
 
-    AuctionStart(_tokenId, _price);
+    AuctionStart(_tokenId, _seller, _price);
   }
 
   function getAuctionTokens() external constant returns(uint256[]) {
@@ -75,7 +75,7 @@ contract Market {
 
         _remove(_tokenId);
 
-        AuctionSuccess(_tokenId, _price);
+        AuctionSuccess(_tokenId, auction.seller, _buyer, _price);
     }
   }
 
@@ -89,7 +89,7 @@ contract Market {
     uint256 tokenIndex = auctionTokenIndex[_tokenId];
     require(auctionTokens[tokenIndex] == _tokenId); // dont know why
     if (tokenIndex < auctionTokens.length - 1) { // if this is the last, no need change
-        auctionTokens[tokenIndex] = auctionTokens[auctionTokens.length-1]; 
+        auctionTokens[tokenIndex] = auctionTokens[auctionTokens.length-1];
         auctionTokenIndex[auctionTokens[tokenIndex]] = tokenIndex;
     }
     --auctionTokens.length;
