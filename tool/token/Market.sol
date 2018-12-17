@@ -73,9 +73,11 @@ contract Market {
     if (transferSuccess) {
         _transfer(_buyer, _tokenId);
 
+        address seller = auction.seller;
+
         _remove(_tokenId);
 
-        AuctionSuccess(_tokenId, auction.seller, _buyer, _price);
+        AuctionSuccess(_tokenId, seller, _buyer, _price);
     }
   }
 
@@ -87,7 +89,7 @@ contract Market {
 
     // change last token to current position and decrease length and update index
     uint256 tokenIndex = auctionTokenIndex[_tokenId];
-    require(auctionTokens[tokenIndex] == _tokenId); // dont know why
+    require(auctionTokens[tokenIndex] == _tokenId);
     if (tokenIndex < auctionTokens.length - 1) { // if this is the last, no need change
         auctionTokens[tokenIndex] = auctionTokens[auctionTokens.length-1];
         auctionTokenIndex[auctionTokens[tokenIndex]] = tokenIndex;
