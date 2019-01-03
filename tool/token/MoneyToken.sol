@@ -11,6 +11,7 @@ contract MoneyToken is ERC20 {
     mapping(address => mapping(address => uint256)) allowed;
     address public owner;
     address public market;
+	event total(uint256 money);
 
     modifier onlyOwner {
         if (msg.sender != owner) {
@@ -45,6 +46,11 @@ contract MoneyToken is ERC20 {
     function balanceOf(address _owner) constant public returns (uint256 balance) {
           return balances[_owner];
     }
+
+	function balanceProof(address _owner) public returns (uint256 balance) {
+		  total(balances[_owner]);
+		  return balances[_owner];
+	}
 
     function transfer(address to, uint256 amount) public returns (bool success) {
         if (balances[msg.sender] >= amount && amount > 0 && balances[to] + amount > balances[to]) {
